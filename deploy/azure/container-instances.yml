@@ -1,0 +1,93 @@
+apiVersion: '2021-09-01'
+location: East US
+name: microservice-app
+properties:
+  containers:
+  - name: backend
+    properties:
+      image: ghcr.io/YOUR_USERNAME/microservice/backend:latest
+      resources:
+        requests:
+          cpu: 0.5
+          memoryInGb: 1
+      ports:
+      - port: 3000
+        protocol: TCP
+      environmentVariables:
+      - name: NODE_ENV
+        value: production
+      - name: PORT
+        value: '3000'
+      - name: CORS_ORIGIN
+        value: https://your-domain.com
+      - name: RATE_LIMIT_WINDOW_MS
+        value: '900000'
+      - name: RATE_LIMIT_MAX_REQUESTS
+        value: '100'
+      - name: MONGODB_URI
+        secureValue: mongodb+srv://username:password@cluster.mongodb.net/microservice_db
+      - name: JWT_SECRET
+        secureValue: your-super-secret-jwt-key-for-production
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 3000
+        initialDelaySeconds: 60
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 3000
+        initialDelaySeconds: 30
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
+
+  - name: frontend
+    properties:
+      image: ghcr.io/YOUR_USERNAME/microservice/frontend:latest
+      resources:
+        requests:
+          cpu: 0.25
+          memoryInGb: 0.5
+      ports:
+      - port: 8080
+        protocol: TCP
+      environmentVariables:
+      - name: REACT_APP_API_URL
+        value: https://api.your-domain.com
+      livenessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        timeoutSeconds: 5
+        failureThreshold: 3
+      readinessProbe:
+        httpGet:
+          path: /health
+          port: 8080
+        initialDelaySeconds: 15
+        periodSeconds: 10
+        timeoutSeconds: 5
+        failureThreshold: 3
+
+  osType: Linux
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 8080
+    dnsNameLabel: microservice-app
+
+  restartPolicy: Always
+
+tags:
+  Environment: Production
+  Application: Microservice
+  Owner: YourName
