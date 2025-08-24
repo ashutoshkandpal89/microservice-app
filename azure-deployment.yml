@@ -1,0 +1,66 @@
+# Azure Deployment Configuration
+# This file contains all the Azure resources needed for the microservice deployment
+
+name: microservice-app-deployment
+resourceGroup: rg-microservice-app
+location: eastus
+environment: production
+
+resources:
+  # Container Registry for storing Docker images
+  containerRegistry:
+    name: acrmicroserviceapp
+    sku: Standard
+    location: eastus
+    adminEnabled: true
+
+  # Container Apps Environment
+  containerAppsEnvironment:
+    name: microservice-env
+    location: eastus
+    
+  # MongoDB Cosmos DB (MongoDB API)
+  cosmosDB:
+    name: cosmos-microservice-app
+    location: eastus
+    api: MongoDB
+    tier: Standard
+    
+  # Container Apps for services
+  containerApps:
+    backend:
+      name: backend-app
+      image: acrmicroserviceapp.azurecr.io/backend:latest
+      port: 3000
+      replicas: 1
+      environment:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "3000"
+        - name: MONGODB_URI
+          secretRef: mongodb-connection-string
+        - name: JWT_SECRET
+          secretRef: jwt-secret
+        - name: CORS_ORIGIN
+          value: "https://frontend-app.kindground-12345678.eastus.azurecontainerapps.io"
+          
+    frontend:
+      name: frontend-app  
+      image: acrmicroserviceapp.azurecr.io/frontend:latest
+      port: 8080
+      replicas: 1
+      environment:
+        - name: REACT_APP_API_URL
+          value: "https://backend-app.kindground-12345678.eastus.azurecontainerapps.io"
+
+  # Application Insights for monitoring
+  applicationInsights:
+    name: appinsights-microservice
+    location: eastus
+    
+  # Log Analytics Workspace
+  logAnalyticsWorkspace:
+    name: logs-microservice
+    location: eastus
+    sku: PerGB2018
